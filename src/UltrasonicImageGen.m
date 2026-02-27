@@ -23,21 +23,21 @@
 close all; clear;
 
 %%% FOLDER PATH INPUTS %%%
-folderPath = './11-8 plastic_cotton left 15sweep 30v/rx/';
-folderPathCali = './11-23 air 15sweep 30v/rx/';
-folderPathTx = './11-8 plastic_cotton left 15sweep 30v/';
-folderPathTxCali = './11-23 air 15sweep 30v/';
+folderPath = './11-14 30air/11-14 air air 1 15sweep 30v/rx/';
+folderPathCali = './11-14 30air/11-14 air air 11 15sweep 30v/rx/';
+folderPathTx = './11-14 30air/11-14 air air 2 15sweep 30v/';
+folderPathTxCali = './11-14 30air/11-14 air air 11 15sweep 30v/';
 
 %%% IMAGE PROCESSING PARAMETERS %%%
 function G = dspglobals
     G.INTERPOLATION_TYPE = 'nearest'; % 'nearest', 'natural' for img interp.
-    G.VOLTAGE_AUTORANGE = true;       % If false, set the two params below.
+    G.VOLTAGE_AUTORANGE = false;       % If false, set the two params below.
     G.MAX_VOLTAGE = 475;              % mV
-    G.MIN_VOLTAGE = 0;
-    G.TRANSMISSION_VOLTAGE_AUTORANGE = true; % If false, set the two params below.
-    G.TRANSMISSION_RECEIVERS_MAX_VOLTAGE = 360;
+    G.MIN_VOLTAGE = 20;
+    G.TRANSMISSION_VOLTAGE_AUTORANGE = false; % If false, set the two params below.
+    G.TRANSMISSION_RECEIVERS_MAX_VOLTAGE = 405;
     G.TRANSMISSION_RECEIVERS_MIN_VOLTAGE = 0;
-    G.PROMINENCE_THRESHOLD_MULTIPLIER = 0.3; % Strength of local maxima filters. 0.0 - 1.0.
+    G.PROMINENCE_THRESHOLD_MULTIPLIER = 0.95; % Strength of local maxima filters. 0.0 - 1.0.
     G.VOLTAGE_THRESHOLD_MULTIPLIER = 0.2;    % Filter for small reflections. 0.0 - 1.0.
     G.DO_X_MASK = false;      % Whether to filter around each local maxima in the x direction.
     G.YMASK_TOLERANCE = 3;   % How narrowly to filter around each local maxima (y).
@@ -137,6 +137,7 @@ function process_all_files(doTransmission, doSubtraction, doFilter, doInterpolat
         receiverAngles = [11, 9, 8, 6, 5, 3, 1, 0, -1, -3, -5, -6, -8, -9, -11, -12];
         maxValues = zeros(16, 1);
         maxValuesCali = zeros(16, 1);
+        maxValuesRaw = zeros(16, 1); % deep copy to keep track of the original max values
         controlSequences = fieldnames(filesTx);
         for i = 1:length(controlSequences)
             ctrl = controlSequences{i};
@@ -201,6 +202,7 @@ function process_all_files(doTransmission, doSubtraction, doFilter, doInterpolat
             % Initialize array to store max values per control sequence
             maxValuesPerCtrl = zeros(numReceiversPerCtrl, 1);
             maxValuesCaliPerCtrl = zeros(numReceiversPerCtrl, 1);
+            maxValuesRawPerCtrl = zeros(numReceiversPerCtrl, 1);
     
             % For each receiver in this control sequence
             for r = 1:numReceiversPerCtrl
@@ -221,14 +223,17 @@ function process_all_files(doTransmission, doSubtraction, doFilter, doInterpolat
                     dataCali = maxDataCtrlCali(r, idxs);
                     maxValuesPerCtrl(r) = max((max(dataCali) - max(data)), 0);
                     maxValuesCaliPerCtrl(r) = max(dataCali);
+                    maxValuesRawPerCtrl(r) = max(data);
                 else
                     maxValuesPerCtrl(r) = NaN; % Handle missing data appropriately
+                    maxValuesRawPerCtrl(r) = NaN;
                 end
             end
     
             % Store the max values into the global maxValues array
             maxValues(receiverIndices) = maxValuesPerCtrl;
             maxValuesCali(receiverIndices) = maxValuesCaliPerCtrl;
+            maxValuesRaw(receiverIndices) = maxValuesRawPerCtrl;
         end
     end
 
@@ -290,14 +295,14 @@ function process_all_files(doTransmission, doSubtraction, doFilter, doInterpolat
     end
 
     plot_ultrasound_image(delayedSigTotal, angles, timeStepSize, speedOfSound, ...
-                          doTransmission, maxValues, receiverAngles);
+                          doTransmission, maxValues, maxValuesRaw, receiverAngles);
 end
 
 
 %% Image Generation %%
 
 function plot_ultrasound_image(delayedSigTotal, angles, timeStepSize, speedOfSound, doTransmission, ...
-                               maxValues, receiverAngles)
+                               maxValues, maxValuesRaw, receiverAngles)
     %% Polar to Cartesian
     % Converts polar coordinates to Cartesian coordinates and plots the ultrasound image.
     [numSamples, numAngles] = size(delayedSigTotal);
@@ -379,7 +384,7 @@ function plot_ultrasound_image(delayedSigTotal, angles, timeStepSize, speedOfSou
     intensity_filled(~reflectionMask, :) = 0;
     
     %% Local max detection
-    [lmax, prom] = islocalmax2(intensity_filled, FlatSelection="center");
+    [lmax, prom] = islocalmax2(intensity_filled);
     
     % Filtering lmax based on prominence & intensity in a neighborhood
     promThreshold = G.PROMINENCE_THRESHOLD_MULTIPLIER * max(prom(:));
@@ -556,7 +561,7 @@ function plot_ultrasound_image(delayedSigTotal, angles, timeStepSize, speedOfSou
         dcm = datacursormode(gcf);
         set(dcm, 'UpdateFcn', @(obj, event_obj) customDataTip(event_obj, voltage, x, y));
 
-        fprintf('Transmission mode: %g:\n', transmission_values);
+        % fprintf('Transmission mode: %g\n', maxValuesRaw);
         
     %% Produce resolution plots
     [lmaxY, lmaxX] = find(lmax);       % row, col for each local max

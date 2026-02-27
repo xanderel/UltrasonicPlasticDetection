@@ -12,9 +12,9 @@ function G = dspglobals
     G.MAX_VOLTAGE = 475;
     G.MIN_VOLTAGE = 0;
     G.TRANSMISSION_VOLTAGE_AUTORANGE = true;
-    G.TRANSMISSION_RECEIVERS_MAX_VOLTAGE = 360;
+    G.TRANSMISSION_RECEIVERS_MAX_VOLTAGE = 405;
     G.TRANSMISSION_RECEIVERS_MIN_VOLTAGE = 0;
-    G.PROMINENCE_THRESHOLD_MULTIPLIER = 0.3;
+    G.PROMINENCE_THRESHOLD_MULTIPLIER = 0.95;
     G.VOLTAGE_THRESHOLD_MULTIPLIER = 0.2;
     G.DO_X_MASK = false;
     G.YMASK_TOLERANCE = 3;
@@ -27,6 +27,8 @@ folderPath = './11-12 plastic_cotton right 3 15sweep 30v/rx/';
 folderPathCali = './11-23 air 15sweep 30v/rx/';
 folderPathTx = './11-12 plastic_cotton right 3 15sweep 30v/';
 folderPathTxCali = './11-23 air 15sweep 30v/';
+G.VOLTAGE_AUTORANGE = false;
+G.TRANSMISSION_VOLTAGE_AUTORANGE = false;
 
 2. Plastic and cotton in the center:
 
@@ -34,6 +36,8 @@ folderPath = './11-8 plastic_cotton center 15sweep 30v/rx/';
 folderPathCali = './11-23 air 15sweep 30v/rx/';
 folderPathTx = './11-8 plastic_cotton center 15sweep 30v/';
 folderPathTxCali = './11-23 air 15sweep 30v/';
+G.VOLTAGE_AUTORANGE = false;
+G.TRANSMISSION_VOLTAGE_AUTORANGE = false;
 
 3. Cotton and plastic on the left:
 
@@ -41,6 +45,8 @@ folderPath = './11-8 plastic_cotton left 15sweep 30v/rx/';
 folderPathCali = './11-23 air 15sweep 30v/rx/';
 folderPathTx = './11-8 plastic_cotton left 15sweep 30v/';
 folderPathTxCali = './11-23 air 15sweep 30v/';
+G.VOLTAGE_AUTORANGE = false;
+G.TRANSMISSION_VOLTAGE_AUTORANGE = false;
 
 4. Cotton alone on the right:
 
